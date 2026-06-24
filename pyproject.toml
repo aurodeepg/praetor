@@ -1,0 +1,51 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "praetor"
+version = "0.0.1"
+description = "An intelligent gateway that issues scoped, revocable authority (warrants) to AI agents."
+readme = "README.md"
+requires-python = ">=3.10"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+authors = [{ name = "Aurodeep Ghosh" }]
+keywords = [
+  "ai-agents", "authorization", "agent-identity", "zero-trust",
+  "delegation", "multi-agent", "gateway", "mcp",
+]
+classifiers = [
+  "Development Status :: 2 - Pre-Alpha",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: Apache Software License",
+  "Programming Language :: Python :: 3",
+  "Topic :: Security",
+]
+# Core stays dependency-light on purpose. Heavier/optional pieces live in extras.
+dependencies = []
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8",
+  "ruff>=0.6",
+]
+
+[project.urls]
+Homepage = "https://github.com/aurodeepg/praetor"
+Repository = "https://github.com/aurodeepg/praetor"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/praetor"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 100
+src = ["src", "tests"]
+extend-exclude = ["_reference"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]

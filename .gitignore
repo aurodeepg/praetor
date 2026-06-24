@@ -1,0 +1,44 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+env/
+
+# Tooling
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Local config & secrets
+.env
+*.local
+
+# Data / runtime
+*.sqlite
+*.sqlite3
+praetor.db
+.praetor/
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# Reference spec (old never-run code drop) — kept locally, not shipped
+_reference/
+
+# Internal planning / strategy docs — kept locally, not part of the public repo
+handoff.md
+project_PRAETOR_plan.md
+project_PRAETOR_vision.md
+project_PRAETOR_writeup.md
+project_PRAETOR_competition.md
+project_PRAETOR.code-workspace

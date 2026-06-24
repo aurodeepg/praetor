@@ -27,31 +27,6 @@ enforcement point.
   acceptable.
 - **Cheap to run** — the default configuration costs ~$0; paid LLM backends are opt-in.
 
-## Status / roadmap
-
-Built incrementally; each milestone is a commit that installs clean and passes tests.
-
-- **M0** — repo scaffold + CI ✅
-- M1 — warrant model + scope matching
-- M2 — local keypair identity (RSA-JWT)
-- M3 — gateway: issue · enforce · revoke + audit
-- M4 — capability registry + deterministic matcher
-- M5 — adapter contract + mock adapter + quickstart
-- M6 — CLI (`demo`, `match`)
-- M7 — FastAPI gateway + Web UI
-- M8 — real adapters (HTTP, MCP, Anthropic, OpenAI, Gemini, Copilot Studio)
-- M9 — Phase 2 orchestrator (requirement-driven team evolution)
-- M10 — pluggable AI backends (local SLM / Claude)
-
-## Develop
-
-```bash
-python3 -m venv .venv && source .venv/bin/activate
-pip install -e ".[dev]"
-pytest
-ruff check .
-```
-
 ## License
 
 Apache-2.0 — see [LICENSE](LICENSE).

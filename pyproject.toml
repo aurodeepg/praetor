@@ -35,9 +35,15 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+# The HTTP gateway + Web UI. Optional so the core install stays light.
+serve = [
+  "fastapi>=0.110",
+  "uvicorn[standard]>=0.27",
+]
 dev = [
   "pytest>=8",
   "ruff>=0.6",
+  "httpx>=0.27",   # starlette TestClient transport, for the API tests
 ]
 
 [project.scripts]
@@ -49,6 +55,10 @@ Repository = "https://github.com/aurodeepg/praetor"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/praetor"]
+
+# Ship the static Web UI inside the wheel (editable installs resolve to source).
+[tool.hatch.build.targets.wheel.force-include]
+"src/praetor/web/static" = "praetor/web/static"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -111,6 +111,25 @@ def match(requirement: str) -> None:
         console.print("[dim]no capability matched — nothing proposed.[/dim]")
 
 
+# ── serve ──────────────────────────────────────────────────────────────────────
+@app.command()
+def serve(
+    host: str = typer.Option("127.0.0.1", help="Bind host."),
+    port: int = typer.Option(8088, help="Bind port."),
+    reload: bool = typer.Option(False, "--reload", help="Auto-reload (dev)."),
+) -> None:
+    """Run the gateway HTTP API + Web UI (requires the `serve` extra)."""
+    try:
+        import uvicorn  # noqa: F401
+    except ImportError:
+        console.print("[red]The HTTP gateway needs extra deps:[/red] pip install 'praetor[serve]'")
+        raise typer.Exit(1) from None
+    console.print(
+        f"[bold green]Praetor[/bold green] gateway → http://{host}:{port}  (Web UI at /)"
+    )
+    uvicorn.run("praetor.api.app:app", host=host, port=port, reload=reload)
+
+
 @app.command()
 def version() -> None:
     """Print the Praetor version."""

@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Praetor · Gateway</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <span class="mark">⚔</span>
+      <div>
+        <h1>PRAETOR</h1>
+        <p>scoped, revocable authority for AI agent teams</p>
+      </div>
+    </div>
+    <div class="status">
+      <span id="phase" class="phase">—</span>
+      <span id="conn" class="conn off">connecting…</span>
+    </div>
+  </header>
+
+  <div id="narration" class="narration">Opening the incident-response war room…</div>
+
+  <main>
+    <section class="panel">
+      <h2>ACTIVE WARRANTS <span class="hint">— the team's live authority</span></h2>
+      <table id="ledger">
+        <thead>
+          <tr><th>agent</th><th>capability</th><th>scope</th><th>trust</th><th>ttl</th></tr>
+        </thead>
+        <tbody><tr class="empty"><td colspan="5">no live authority</td></tr></tbody>
+      </table>
+    </section>
+
+    <section class="panel">
+      <h2>GATEWAY DECISIONS <span class="hint">— every verdict is live</span></h2>
+      <ul id="feed"></ul>
+    </section>
+  </main>
+
+  <footer>
+    <span>the gateway is the sole policy enforcement point — revocation is just “deny the next call”</span>
+  </footer>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

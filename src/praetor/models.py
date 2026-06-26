@@ -42,6 +42,28 @@ class AgentIdentity(BaseModel):
     public_key: str | None = None  # PEM, when the backend exposes one
 
 
+class Capability(BaseModel):
+    """One thing an agent can do, as advertised to the registry.
+
+    ``name`` is a dotted action namespace (``net.isolate``, ``logs.read``).
+    ``targets`` optionally constrains what it may act on, as a glob (``logs:*``,
+    ``host:*``). The registry answers "what *could* this agent do?"; a warrant is
+    "what *may* it do right now?".
+    """
+
+    name: str
+    description: str = ""
+    targets: str | None = None  # glob over allowed targets; None = unconstrained
+
+
+class CapabilityManifest(BaseModel):
+    """What an agent publishes to the registry — its advertised capabilities."""
+
+    agent: str
+    description: str = ""
+    capabilities: list[Capability] = Field(default_factory=list)
+
+
 class ToolCall(BaseModel):
     """An agent's attempt to use a tool/capability through the gateway.
 

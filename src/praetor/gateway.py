@@ -20,7 +20,18 @@ from praetor.audit import AuditLog
 from praetor.enforcement import decide
 from praetor.identity import LocalIdentityProvider
 from praetor.identity.base import IdentityProvider
-from praetor.models import AgentIdentity, AuditEntry, Decision, RevokeCause, ToolCall, Warrant
+from praetor.matcher import CapabilityMatcher, DeterministicMatcher, MatchResult
+from praetor.models import (
+    AgentIdentity,
+    AuditEntry,
+    Capability,
+    CapabilityManifest,
+    Decision,
+    RevokeCause,
+    ToolCall,
+    Warrant,
+)
+from praetor.registry import CapabilityRegistry
 from praetor.warrants.issuer import WarrantIssuer
 from praetor.warrants.ledger import WarrantLedger
 
@@ -33,6 +44,7 @@ class Gateway:
     def __init__(
         self,
         identity: IdentityProvider | None = None,
+        matcher: CapabilityMatcher | None = None,
         clock: Callable[[], float] = time.time,
         warrant_ttl_default: float = DEFAULT_WARRANT_TTL,
     ) -> None:
@@ -40,6 +52,8 @@ class Gateway:
         self.warrant_ttl_default = warrant_ttl_default
 
         self.identity = identity or LocalIdentityProvider()
+        self.matcher = matcher or DeterministicMatcher()
+        self.registry = CapabilityRegistry()
         self.ledger = WarrantLedger()
         self.issuer = WarrantIssuer(self.identity)
         self.audit = AuditLog()
@@ -54,15 +68,26 @@ class Gateway:
         self._clock = clock
 
     # ── identity ───────────────────────────────────────────────────────────────
-    def register_agent(self, name: str, trust: str = "unverified") -> AgentIdentity:
-        """Admit an agent by issuing it a verifiable identity.
+    def register_agent(
+        self,
+        name: str,
+        trust: str = "unverified",
+        capabilities: list[Capability] | None = None,
+        description: str = "",
+    ) -> AgentIdentity:
+        """Admit an agent: issue it a verifiable identity and, if it advertises any,
+        register its capability manifest.
 
         Registration grants *no* authority on its own — the agent still can't do
-        anything until it holds a warrant. Identity is who it is; a warrant is what it
-        may do right now.
+        anything until it holds a warrant. Identity is who it is; the manifest is what
+        it *could* do; a warrant is what it *may* do right now.
         """
         identity = self.identity.issue_identity(name, trust=trust)
         self._identities[name] = identity
+        if capabilities is not None or description:
+            self.registry.register(CapabilityManifest(
+                agent=name, description=description, capabilities=capabilities or [],
+            ))
         return identity
 
     def subject_for(self, name_or_id: str) -> str:
@@ -130,6 +155,15 @@ class Gateway:
         ))
         return decision
 
+    # ── matcher (the cheap AI seed) ──────────────────────────────────────────────
+    def match(self, requirement: str, on_behalf_of: str = "") -> MatchResult:
+        """Map a free-form requirement to registered capabilities + a proposed
+        least-privilege scope. This only *proposes* — issuing authority stays an
+        explicit :meth:`issue_warrant` call (optionally fed by the proposal)."""
+        return self.matcher.match(
+            requirement, self.registry.capabilities(), on_behalf_of=on_behalf_of
+        )
+
     # ── views ──────────────────────────────────────────────────────────────────
     def active_warrants(self) -> list[Warrant]:
         return self.ledger.active(self.now())
@@ -139,6 +173,7 @@ class Gateway:
         now = self.now()
         return {
             "now": now,
+            "agents": self.registry.agents(),
             "warrants": [
                 {**w.model_dump(exclude={"token"}), "remaining": w.remaining(now)}
                 for w in self.active_warrants()

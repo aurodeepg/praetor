@@ -13,9 +13,13 @@ applies separately (see :meth:`praetor.models.Warrant.is_active`).
 
 from __future__ import annotations
 
-from fnmatch import fnmatch
+from fnmatch import fnmatchcase
 
 from praetor.models import ToolCall, Warrant
+
+# Use fnmatchcase (not fnmatch): plain fnmatch case-normalizes via os.path.normcase,
+# which lowercases on Windows. An authorization decision must be byte-for-byte
+# deterministic across platforms, so glob matching here is always case-sensitive.
 
 
 def _under(action: str, pattern: str) -> bool:
@@ -24,7 +28,7 @@ def _under(action: str, pattern: str) -> bool:
     ``net.quarantine.isolate-host``)."""
     if action == pattern:
         return True
-    if ("*" in pattern or "?" in pattern) and fnmatch(action, pattern):
+    if ("*" in pattern or "?" in pattern) and fnmatchcase(action, pattern):
         return True
     return action.startswith(pattern + ".") or action.startswith(pattern + ":")
 
@@ -50,7 +54,7 @@ def target_in_scope(target: str | None, scope: dict[str, str]) -> bool:
         return True
     if target is None:
         return False
-    return target == allowed or fnmatch(target, allowed)
+    return target == allowed or fnmatchcase(target, allowed)
 
 
 def warrant_authorizes(warrant: Warrant, call: ToolCall) -> tuple[bool, str]:

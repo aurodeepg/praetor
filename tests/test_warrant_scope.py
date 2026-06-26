@@ -34,6 +34,14 @@ def test_action_matches_exact_glob_and_prefix():
     assert not action_matches("network.isolate", "net")                     # not a prefix boundary
 
 
+def test_glob_matching_is_case_sensitive_on_every_platform():
+    # Guards against fnmatch's os.path.normcase folding (Windows): an authz decision
+    # must be deterministic regardless of the host OS.
+    assert action_matches("logs.read", "logs.*")
+    assert not action_matches("LOGS.read", "logs.*")
+    assert not target_in_scope("HOST-9", {"target": "host-*"})
+
+
 def test_excludes_block_even_when_capability_matches():
     assert excluded("fs.write", ["fs.write", "remediate"])
     assert excluded("net.quarantine.isolate-host", ["net.quarantine"])      # prefix exclude

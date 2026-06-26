@@ -30,6 +30,8 @@ dependencies = [
   "pydantic>=2",
   "pyjwt>=2.8",
   "cryptography>=42",
+  "typer>=0.12",
+  "rich>=13",
 ]
 
 [project.optional-dependencies]
@@ -37,6 +39,9 @@ dev = [
   "pytest>=8",
   "ruff>=0.6",
 ]
+
+[project.scripts]
+praetor = "praetor.cli:main"
 
 [project.urls]
 Homepage = "https://github.com/aurodeepg/praetor"

@@ -10,15 +10,21 @@ from __future__ import annotations
 
 import time
 import uuid
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
 Trust = str  # free-form trust label, e.g. "internal", "3rd-party · prob.", "self-issued"
 
+#: Why a warrant left the live set. ``manual`` (operator/orchestrator drop) and
+#: ``ttl`` (lifetime elapsed) exist now; the rest are Phase-2 orchestrator triggers.
+RevokeCause = Literal["manual", "ttl", "perf", "phase", "reputation"]
+
 
 def _uid(prefix: str) -> str:
-    return f"{prefix}:{uuid.uuid4().hex[:8]}"
+    # Full 128-bit uuid: these ids key the revocation ledger, so collisions (not
+    # guessability — the JWT signature is the trust boundary) must be negligible.
+    return f"{prefix}:{uuid.uuid4().hex}"
 
 
 class AgentIdentity(BaseModel):
@@ -54,8 +60,8 @@ class Warrant(BaseModel):
 
     A warrant is *least-privilege* (one ``capability``, narrowed by ``scope`` with
     explicit ``excludes``), *time-boxed* (``issued_at``/``expires_at``), and
-    *revocable* (the ``revoked`` flag, flipped by the ledger in a later milestone, so
-    the very next call is denied at the gateway).
+    *revocable* (the ``revoked`` flag, flipped by the ledger so the very next call is
+    denied at the gateway).
 
     Whether a warrant *covers* a given call is pure scope matching (see
     :mod:`praetor.warrants.scope`); whether it is *currently valid* (not expired, not
@@ -74,8 +80,12 @@ class Warrant(BaseModel):
 
     issued_at: float = 0.0
     expires_at: float = 0.0
+    token: str | None = None             # signed JWT carrying the claims above
 
     revoked: bool = False
+    revoked_at: float | None = None
+    revoke_cause: RevokeCause | None = None
+    revoke_reason: str | None = None
 
     def is_active(self, now: float) -> bool:
         """Currently valid: not revoked and within the [issued_at, expires_at) window."""
@@ -91,3 +101,35 @@ class Warrant(BaseModel):
     def ttl(self) -> float:
         """Total lifetime of the warrant in seconds."""
         return max(0.0, self.expires_at - self.issued_at)
+
+
+class Decision(BaseModel):
+    """The gateway's verdict for a single call."""
+
+    allow: bool
+    reason: str
+    warrant_id: str | None = None        # the warrant that authorized an allow
+    call: ToolCall
+    decided_at: float = Field(default_factory=time.time)
+
+    @property
+    def verdict(self) -> str:
+        return "ALLOW" if self.allow else "DENY"
+
+
+class AuditEntry(BaseModel):
+    """One immutable line in the provenance trail.
+
+    Every issuance, revocation, and decision lands here, bound to the identity and
+    the warrant involved — the trail that proves what each agent was, and wasn't,
+    allowed to do.
+    """
+
+    ts: float = Field(default_factory=time.time)
+    kind: Literal["issue", "revoke", "decision"]
+    subject: str | None = None
+    warrant_id: str | None = None
+    action: str | None = None
+    decision: str | None = None          # "ALLOW" / "DENY" for decision entries
+    cause: str | None = None             # revoke cause
+    detail: str = ""

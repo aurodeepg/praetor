@@ -1,9 +1,12 @@
 """Warrants — Praetor's unit of authority and the logic that reasons about it.
 
-M1 ships the pure scope-matching layer (does a warrant cover a call?). Issuance,
-the revocation ledger, and signed tokens arrive in later milestones.
+Pure scope matching (does a warrant cover a call?), the signing issuer (mint a
+verifiable grant), and the live ledger (the single source of truth that makes
+revocation instant).
 """
 
+from praetor.warrants.issuer import WarrantIssuer
+from praetor.warrants.ledger import WarrantLedger
 from praetor.warrants.scope import (
     action_matches,
     excluded,
@@ -12,6 +15,8 @@ from praetor.warrants.scope import (
 )
 
 __all__ = [
+    "WarrantIssuer",
+    "WarrantLedger",
     "action_matches",
     "excluded",
     "target_in_scope",

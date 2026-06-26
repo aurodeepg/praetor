@@ -8,4 +8,8 @@ revoking one.
 This package is built up incrementally; see the milestone roadmap in the project docs.
 """
 
+from praetor.gateway import Gateway
+
 __version__ = "0.0.1"
+
+__all__ = ["Gateway", "__version__"]

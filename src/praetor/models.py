@@ -1,12 +1,14 @@
 """Core data model for Praetor.
 
-M1 introduces just the atomic unit of authority — the *warrant* — and the kind of
-thing it authorizes — a *tool call*. Later milestones add identities, capability
-manifests, gateway decisions, and the audit trail, each as its own increment.
+M1 introduced the atomic unit of authority — the *warrant* — and the kind of thing
+it authorizes — a *tool call*. M2 adds the *agent identity* every warrant is bound
+to. Later milestones add capability manifests, gateway decisions, and the audit
+trail, each as its own increment.
 """
 
 from __future__ import annotations
 
+import time
 import uuid
 from typing import Any
 
@@ -17,6 +19,21 @@ Trust = str  # free-form trust label, e.g. "internal", "3rd-party · prob.", "se
 
 def _uid(prefix: str) -> str:
     return f"{prefix}:{uuid.uuid4().hex[:8]}"
+
+
+class AgentIdentity(BaseModel):
+    """A verifiable identity the gateway issues to an agent.
+
+    ``id`` is opaque to callers but meaningful to the identity backend — e.g.
+    ``agent:containment:1a2b3c4d`` (local keypair backend). Warrants are bound to
+    this id via their ``subject`` field.
+    """
+
+    id: str
+    name: str
+    trust: Trust = "unverified"
+    issued_at: float = Field(default_factory=time.time)
+    public_key: str | None = None  # PEM, when the backend exposes one
 
 
 class ToolCall(BaseModel):

@@ -24,8 +24,12 @@ classifiers = [
 ]
 # Core stays dependency-light on purpose. Heavier/optional pieces live in extras.
 # pydantic models the warrant — the atomic unit reused by every later milestone.
+# pyjwt + cryptography give verifiable agent identity (RS256-signed warrant tokens)
+# without rolling our own crypto.
 dependencies = [
   "pydantic>=2",
+  "pyjwt>=2.8",
+  "cryptography>=42",
 ]
 
 [project.optional-dependencies]

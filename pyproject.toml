@@ -23,7 +23,10 @@ classifiers = [
   "Topic :: Security",
 ]
 # Core stays dependency-light on purpose. Heavier/optional pieces live in extras.
-dependencies = []
+# pydantic models the warrant — the atomic unit reused by every later milestone.
+dependencies = [
+  "pydantic>=2",
+]
 
 [project.optional-dependencies]
 dev = [

@@ -77,6 +77,14 @@ class ToolCall(BaseModel):
     args: dict[str, Any] = Field(default_factory=dict)
 
 
+class ToolResult(BaseModel):
+    """What an adapter returns after executing a gateway-authorized call."""
+
+    ok: bool = True
+    output: Any = None
+    error: str | None = None
+
+
 class Warrant(BaseModel):
     """The unit of authority — a single scoped, time-boxed, revocable grant.
 

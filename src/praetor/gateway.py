@@ -16,6 +16,7 @@ from __future__ import annotations
 import time
 from collections.abc import Callable
 
+from praetor.adapters.base import AgentAdapter
 from praetor.audit import AuditLog
 from praetor.enforcement import decide
 from praetor.identity import LocalIdentityProvider
@@ -29,6 +30,7 @@ from praetor.models import (
     Decision,
     RevokeCause,
     ToolCall,
+    ToolResult,
     Warrant,
 )
 from praetor.registry import CapabilityRegistry
@@ -59,6 +61,7 @@ class Gateway:
         self.audit = AuditLog()
 
         self._identities: dict[str, AgentIdentity] = {}  # agent name -> identity
+        self._adapters: dict[str, AgentAdapter] = {}     # identity id -> adapter
 
     # ── clock ──────────────────────────────────────────────────────────────────
     def now(self) -> float:
@@ -88,6 +91,18 @@ class Gateway:
             self.registry.register(CapabilityManifest(
                 agent=name, description=description, capabilities=capabilities or [],
             ))
+        return identity
+
+    def register(self, adapter: AgentAdapter) -> AgentIdentity:
+        """Admit an agent *by its adapter*: issue identity, register the adapter's
+        manifest, and wire the adapter so the gateway can dispatch authorized calls to
+        it. Like :meth:`register_agent`, this grants no authority on its own."""
+        identity = self.identity.issue_identity(adapter.name, trust=adapter.trust)
+        self._identities[adapter.name] = identity
+        manifest = adapter.manifest()
+        manifest.agent = adapter.name
+        self.registry.register(manifest)
+        self._adapters[identity.id] = adapter
         return identity
 
     def subject_for(self, name_or_id: str) -> str:
@@ -154,6 +169,19 @@ class Gateway:
             decision=decision.verdict, detail=decision.reason,
         ))
         return decision
+
+    def dispatch(self, call: ToolCall) -> tuple[Decision, ToolResult | None]:
+        """Enforce, then — only if allowed — run the agent's adapter. A denied call
+        never reaches ``invoke``: the gateway is the policy enforcement point that sits
+        between intent and action."""
+        decision = self.enforce(call)
+        if not decision.allow:
+            return decision, None
+        adapter = self._adapters.get(self.subject_for(call.agent)) \
+            or self._adapters.get(call.agent)
+        if adapter is None:
+            return decision, ToolResult(ok=False, error="no adapter registered for agent")
+        return decision, adapter.invoke(call)
 
     # ── matcher (the cheap AI seed) ──────────────────────────────────────────────
     def match(self, requirement: str, on_behalf_of: str = "") -> MatchResult:

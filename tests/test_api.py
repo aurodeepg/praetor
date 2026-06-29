@@ -80,3 +80,31 @@ def test_websocket_streams_war_room_frames(client):
             badges.add(ws.receive_json()["badge"])
     # the stream carried both grants and live verdicts
     assert "ISSUE" in badges and "ALLOW" in badges and "DENY" in badges
+
+
+def test_scenarios_endpoint_lists_phase2(client):
+    items = client.get("/api/scenarios").json()
+    keys = {s["key"] for s in items}
+    assert {"war-room", "phase2"} <= keys
+    assert all("title" in s for s in items)
+
+
+def test_websocket_can_stream_a_chosen_scenario(client):
+    # the Phase-2 orchestrator-driven scenario, selected by query param
+    with client.websocket_connect(
+        "/api/ws/demo?scenario=phase2&interval_ms=0&loop=0"
+    ) as ws:
+        badges, messages = set(), []
+        for _ in range(11):  # phase2 has 11 frames
+            f = ws.receive_json()
+            badges.add(f["badge"])
+            messages.append(f["message"])
+    assert {"ISSUE", "ALLOW", "DENY", "REVOKE"} <= badges
+    # the orchestrator admitted a different agent after a trigger
+    assert any("containment-a" in m for m in messages)
+    assert any("containment-b" in m for m in messages)
+
+
+def test_websocket_unknown_scenario_errors(client):
+    with client.websocket_connect("/api/ws/demo?scenario=nope&loop=0") as ws:
+        assert ws.receive_json() == {"error": "unknown scenario"}

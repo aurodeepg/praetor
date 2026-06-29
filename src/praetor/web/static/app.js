@@ -43,22 +43,52 @@ function pushFeed(frame) {
 }
 
 function apply(frame) {
+  if (frame.error) return; // e.g. unknown scenario
   $("phase").textContent = frame.phase;
   $("narration").textContent = frame.narration;
   renderLedger(frame.ledger);
   pushFeed(frame);
 }
 
+let ws = null;
+let scenario = "war-room";
+
 function connect() {
   const proto = location.protocol === "https:" ? "wss" : "ws";
-  const ws = new WebSocket(`${proto}://${location.host}/api/ws/demo`);
+  ws = new WebSocket(`${proto}://${location.host}/api/ws/demo?scenario=${encodeURIComponent(scenario)}`);
   ws.onopen = () => setConn(true);
   ws.onmessage = (ev) => apply(JSON.parse(ev.data));
   ws.onclose = () => {
     setConn(false);
-    setTimeout(connect, 1500); // auto-reconnect
+    setTimeout(connect, 1500); // auto-reconnect (with the current scenario)
   };
   ws.onerror = () => ws.close();
 }
 
+function switchScenario(key) {
+  scenario = key;
+  $("feed").innerHTML = "";
+  renderLedger([]);
+  $("narration").textContent = "Opening scenario…";
+  if (ws) ws.close(); // onclose reconnects with the new scenario
+}
+
+async function initScenarioPicker() {
+  const sel = $("scenario");
+  try {
+    const list = await (await fetch("/api/scenarios")).json();
+    for (const s of list) {
+      const opt = document.createElement("option");
+      opt.value = s.key;
+      opt.textContent = s.title;
+      sel.appendChild(opt);
+    }
+    sel.value = scenario;
+    sel.onchange = () => switchScenario(sel.value);
+  } catch {
+    sel.style.display = "none"; // API unavailable — fall back to default stream
+  }
+}
+
+initScenarioPicker();
 connect();

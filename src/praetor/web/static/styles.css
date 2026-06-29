@@ -30,6 +30,11 @@ h1 { margin: 0; font-size: 20px; letter-spacing: 4px; }
 .brand p { margin: 0; color: var(--dim); font-size: 12px; }
 
 .status { display: flex; align-items: center; gap: 12px; }
+.scenario {
+  font-size: 12px; padding: 4px 10px; border-radius: 999px;
+  color: var(--gold); background: #10231b; border: 1px solid var(--line);
+  cursor: pointer;
+}
 .phase {
   padding: 4px 12px; border: 1px solid var(--line); border-radius: 999px;
   color: var(--gold); letter-spacing: 2px; font-weight: 700;

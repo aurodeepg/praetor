@@ -23,8 +23,8 @@ from pydantic import BaseModel, Field
 from praetor import __version__
 from praetor.gateway import Gateway
 from praetor.models import ToolCall
+from praetor.scenarios import SCENARIOS
 from praetor.scenarios.seed import seed_war_room_agents
-from praetor.scenarios.war_room import WarRoom
 
 STATIC_DIR = Path(__file__).resolve().parent.parent / "web" / "static"
 
@@ -113,15 +113,26 @@ def create_app() -> FastAPI:
     def snapshot() -> dict:
         return gw.snapshot()
 
-    # ── WebSocket: live war-room frames ─────────────────────────────────────────
+    @app.get("/api/scenarios")
+    def scenarios() -> list[dict]:
+        """The replayable scenarios the demo WebSocket can stream (incl. the Phase-2
+        orchestrator-driven one)."""
+        return [{"key": k, "title": cls.title} for k, cls in SCENARIOS.items()]
+
+    # ── WebSocket: live scenario frames ─────────────────────────────────────────
     @app.websocket("/api/ws/demo")
     async def demo(ws: WebSocket) -> None:
         await ws.accept()
         interval = max(0.05, int(ws.query_params.get("interval_ms", "900")) / 1000)
         loop = ws.query_params.get("loop", "1") != "0"
+        cls = SCENARIOS.get(ws.query_params.get("scenario", "war-room"))
+        if cls is None:
+            await ws.send_json({"error": "unknown scenario"})
+            await ws.close()
+            return
         try:
-            while True:  # replay the war room on its own gateway, continuously
-                for frame in WarRoom().play():
+            while True:  # replay the chosen scenario on its own gateway, continuously
+                for frame in cls().play():
                     await ws.send_json(frame.model_dump())
                     await asyncio.sleep(interval)
                 if not loop:

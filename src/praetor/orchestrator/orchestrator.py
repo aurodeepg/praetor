@@ -56,6 +56,7 @@ class Orchestrator:
         self.perf_decrement = perf_decrement
         self.profiles: dict[str, AgentProfile] = {}
         self._tasks: dict[str, str] = {}  # on_behalf_of -> requirement (for recomposition)
+        self._rankings: dict[str, list[FitScore]] = {}  # on_behalf_of -> last ranking
 
     # ── profiles ─────────────────────────────────────────────────────────────────
     def set_profile(self, profile: AgentProfile) -> None:
@@ -63,6 +64,15 @@ class Orchestrator:
 
     def profile(self, agent: str, trust: str = "unverified") -> AgentProfile:
         return self.profiles.setdefault(agent, AgentProfile(agent=agent, trust=trust))
+
+    def sync_profiles_from_gateway(self) -> None:
+        """Create a default profile for every registered agent that doesn't have one yet,
+        pulling its trust label from the gateway identity. Cost/availability take defaults
+        (free, available) until set explicitly — so the orchestrator works against any
+        gateway out of the box, ranking on capability × trust."""
+        for name, ident in self.gw.identities().items():
+            if name not in self.profiles:
+                self.profiles[name] = AgentProfile(agent=name, trust=ident.trust)
 
     # ── ranking ──────────────────────────────────────────────────────────────────
     def rank(self, requirement: str, *, exclude: set[str] | None = None) -> list[FitScore]:
@@ -99,6 +109,7 @@ class Orchestrator:
         from the matcher proposal). Returns the decision, including the full ranking."""
         self._tasks[on_behalf_of] = requirement
         ranked = self.rank(requirement, exclude=exclude)
+        self._rankings[on_behalf_of] = ranked
         viable = [f for f in ranked if f.score > 0]
         if not viable:
             return Composition(
@@ -162,6 +173,19 @@ class Orchestrator:
         for w in self._warrants_for_task(on_behalf_of):
             self.gw.revoke(w.wid, cause=cause, reason=reason or f"released ({cause})")
         self._tasks.pop(on_behalf_of, None)
+
+    # ── views ────────────────────────────────────────────────────────────────────
+    def snapshot(self) -> dict:
+        """An inspectable view of the orchestrator's reasoning: the budget, per-agent
+        profiles, and the most recent fit ranking per task (full factor breakdown)."""
+        return {
+            "budget": self.budget,
+            "profiles": {a: p.model_dump() for a, p in self.profiles.items()},
+            "rankings": {
+                obo: [f.model_dump() for f in ranked]
+                for obo, ranked in self._rankings.items()
+            },
+        }
 
     # ── internals ────────────────────────────────────────────────────────────────
     def _warrants_for_task(self, on_behalf_of: str) -> list:

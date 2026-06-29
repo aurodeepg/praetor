@@ -80,6 +80,13 @@ def test_cli_match_handles_no_match_gracefully():
     assert result.exit_code == 0  # ranks everything; may still propose the top lexical fit
 
 
+def test_cli_compose_runs_the_orchestrator_and_admits_an_agent():
+    result = runner.invoke(app, ["compose", "isolate the compromised host host-9"])
+    assert result.exit_code == 0
+    assert "TEAM COMPOSED" in result.stdout
+    assert "containment" in result.stdout  # best fit for an isolate requirement
+
+
 def test_cli_version():
     result = runner.invoke(app, ["version"])
     assert result.exit_code == 0 and "praetor" in result.stdout

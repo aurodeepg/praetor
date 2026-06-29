@@ -1,8 +1,9 @@
 """Praetor CLI — drive the gateway from the terminal.
 
     praetor demo                      # replay the incident-response war room (Phase 1)
-    praetor demo --interval 1.0       # pace the replay for a live audience
+    praetor demo --scenario phase2    # the Phase-2 orchestrator reshaping the team live
     praetor match "isolate host-9"    # capability matcher → proposed least-privilege grant
+    praetor compose "read the logs"   # Phase-2 orchestrator → team-fit ranking + admit
     praetor version
 
 Every verdict in `demo` comes from the real gateway, not a script.
@@ -21,6 +22,7 @@ from rich.text import Text
 
 from praetor import __version__
 from praetor.gateway import Gateway
+from praetor.orchestrator import Orchestrator
 from praetor.scenarios import SCENARIOS
 from praetor.scenarios.base import Frame
 from praetor.scenarios.seed import seed_war_room_agents
@@ -121,6 +123,43 @@ def match(requirement: str) -> None:
         console.print("[dim]no capability matched — nothing proposed.[/dim]")
 
 
+# ── compose ──────────────────────────────────────────────────────────────────────
+@app.command()
+def compose(
+    requirement: str,
+    budget: float = typer.Option(None, "--budget", "-b", help="Budget ceiling for team-fit."),
+    on_behalf_of: str = typer.Option("task://cli", "--for", help="The requester / task."),
+) -> None:
+    """Run the Phase-2 orchestrator: score team fit and admit the best agent (the gateway
+    issues a least-privilege warrant). Fit = capability × trust × budget × availability."""
+    gw = Gateway()
+    seed_war_room_agents(gw)
+    orch = Orchestrator(gw, budget=budget)
+    orch.sync_profiles_from_gateway()
+    comp = orch.compose(requirement, on_behalf_of=on_behalf_of)
+
+    console.print(f"[bold]requirement[/bold]: {requirement}")
+    console.print(f"[dim]budget: {budget if budget is not None else '—'}[/dim]\n")
+
+    table = Table("fit", "agent", "capability", "cap", "trust", "budget", "avail", box=None)
+    for f in comp.ranked[:6]:
+        table.add_row(f"{f.score:.3f}", f.agent, f.capability, f"{f.capability_match:.2f}",
+                      f"{f.trust:.2f}", f"{f.budget:.0f}", f"{f.availability:.0f}")
+    console.print(table)
+
+    if comp.chosen:
+        console.print(Panel(
+            f"[bold]admitted[/bold]  {comp.chosen}\n"
+            f"[bold]fit[/bold]       {comp.fit.score:.3f}  "
+            f"([dim]{comp.fit.rationale}[/dim])\n"
+            f"[bold]warrant[/bold]   {comp.warrant_id}",
+            title="TEAM COMPOSED · least-privilege warrant issued",
+            border_style="green",
+        ))
+    else:
+        console.print(f"[dim]{comp.note}[/dim]")
+
+
 # ── serve ──────────────────────────────────────────────────────────────────────
 @app.command()
 def serve(
@@ -132,7 +171,10 @@ def serve(
     try:
         import uvicorn  # noqa: F401
     except ImportError:
-        console.print("[red]The HTTP gateway needs extra deps:[/red] pip install 'praetor[serve]'")
+        # escape the [serve] bracket so rich doesn't parse it as markup and drop it
+        console.print(
+            r"[red]The HTTP gateway needs extra deps:[/red] pip install 'praetor\[serve]'"
+        )
         raise typer.Exit(1) from None
     console.print(
         f"[bold green]Praetor[/bold green] gateway → http://{host}:{port}  (Web UI at /)"

@@ -136,3 +136,28 @@ def test_release_revokes_the_whole_team_for_a_task():
     assert gw.active_warrants()
     orch.release("incident://1", cause="phase", reason="phase complete")
     assert gw.active_warrants() == []
+
+
+# ── profile sync + snapshot (M9 polish) ──────────────────────────────────────
+
+
+def test_sync_profiles_pulls_trust_from_the_gateway():
+    gw = Gateway()
+    gw.register_agent("forensics", trust="internal · read-only", capabilities=[READLOGS])
+    gw.register_agent("intel", trust="3rd-party · prob.", capabilities=[READLOGS])
+    orch = Orchestrator(gw)
+    orch.sync_profiles_from_gateway()
+    assert orch.profile("forensics").trust == "internal · read-only"
+    assert orch.profile("forensics").weight() == 1.0
+    assert orch.profile("intel").weight() == 0.4  # third-party → lower
+
+
+def test_snapshot_exposes_profiles_and_the_last_ranking():
+    gw = _gw_with(("containment-a", [ISOLATE]), ("containment-b", [ISOLATE]))
+    orch = Orchestrator(gw)
+    orch.sync_profiles_from_gateway()
+    orch.compose("isolate host-9", on_behalf_of="incident://1")
+    snap = orch.snapshot()
+    assert set(snap["profiles"]) >= {"containment-a", "containment-b"}
+    ranking = snap["rankings"]["incident://1"]
+    assert ranking and {"agent", "score", "capability_match", "trust"} <= set(ranking[0])

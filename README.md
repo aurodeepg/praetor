@@ -27,6 +27,61 @@ enforcement point.
   acceptable.
 - **Cheap to run** — the default configuration costs ~$0; paid LLM backends are opt-in.
 
+## Quickstart
+
+Requires Python 3.10+.
+
+```bash
+git clone https://github.com/aurodeepg/praetor.git
+cd praetor
+python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
+pip install -e .                                     # core install — no heavy deps
+
+praetor demo                  # replay the incident-response war room (every verdict is live)
+praetor match "isolate the compromised host host-9"   # capability matcher → proposed warrant
+praetor compose "read the auth logs"                  # Phase-2 orchestrator → team-fit ranking
+python examples/quickstart.py # the whole Phase-1 loop: issue → invoke → deny → revoke → audit
+```
+
+### Scenarios
+
+`praetor demo --scenario <key>` (or pick one in the Web UI):
+
+| key | what it shows |
+| --- | --- |
+| `war-room` _(default)_ | mixed-trust incident response; scope, escalation-blocked, revoke, TTL expiry |
+| `least-privilege` | a read+write-capable agent held to a read-only warrant — the broker decides, not the agent |
+| `cross-framework` | OpenAI + Claude + Copilot Studio agents, governed identically |
+| `recompose` | phase-driven team reshaping (hand-scripted) |
+| `phase2` | the **orchestrator** reshapes the team itself — perf-based swap + budget gate |
+
+### Web UI
+
+```bash
+pip install -e ".[serve]"     # FastAPI + uvicorn
+praetor serve                 # → http://localhost:8088  (live ledger + decision feed; pick a scenario)
+```
+
+### Run the tests
+
+```bash
+pip install -e ".[dev]"
+pytest        # and: ruff check .
+```
+
+### Optional extras
+
+The core install is deliberately dependency-light; heavier pieces are opt-in and imported lazily.
+
+| extra | adds | for |
+| --- | --- | --- |
+| `dev` | pytest, ruff, httpx, mcp | running the test suite |
+| `serve` | fastapi, uvicorn | the HTTP API + Web UI (`praetor serve`) |
+| `http` | httpx | governing a remote agent over HTTP (`HTTPAdapter`) |
+| `mcp` | mcp | governing any Model Context Protocol server (`MCPAdapter`) |
+
+Install several at once, e.g. `pip install -e ".[dev,serve]"`.
+
 ## License
 
 Apache-2.0 — see [LICENSE](LICENSE).

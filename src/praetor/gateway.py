@@ -110,6 +110,10 @@ class Gateway:
         ident = self._identities.get(name_or_id)
         return ident.id if ident else name_or_id
 
+    def identities(self) -> dict[str, AgentIdentity]:
+        """A copy of the registered agents' identities, keyed by name (trust lives here)."""
+        return dict(self._identities)
+
     # ── warrants ───────────────────────────────────────────────────────────────
     def issue_warrant(
         self,

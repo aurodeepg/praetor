@@ -44,10 +44,15 @@ serve = [
 http = [
   "httpx>=0.27",
 ]
+# Govern any Model Context Protocol server (the MCPAdapter). Imported lazily.
+mcp = [
+  "mcp>=1.0",
+]
 dev = [
   "pytest>=8",
   "ruff>=0.6",
   "httpx>=0.27",   # starlette TestClient transport + HTTPAdapter tests
+  "mcp>=1.0",      # validates the MCPAdapter translation against the real SDK types
 ]
 
 [project.scripts]

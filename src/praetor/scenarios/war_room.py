@@ -13,73 +13,27 @@ from __future__ import annotations
 
 from collections.abc import Iterator
 
-from pydantic import BaseModel, Field
-
 from praetor.gateway import Gateway
 from praetor.models import ToolCall
-from praetor.scenarios.seed import seed_war_room_agents
+from praetor.scenarios.base import Frame, LedgerRow, Scenario
+from praetor.scenarios.seed import war_room_adapters
+
+__all__ = ["Frame", "LedgerRow", "WarRoom", "play"]
 
 
-class _Clock:
-    """A hand-cranked clock so TTL expiry is deterministic in the replay."""
+class WarRoom(Scenario):
+    """Scenario #1 — the mixed-trust incident war room (the headline demo).
 
-    def __init__(self, t: float = 1000.0) -> None:
-        self.t = t
+    Roster (each a real third-party agent in production; mock-backed here): a
+    high-privilege **containment** agent, a read-only **forensics** agent, and an
+    untrusted third-party **threat-intel** agent. The replay also exercises live
+    revocation and TTL expiry (scenario #4's beats fold in here).
+    """
 
-    def __call__(self) -> float:
-        return self.t
+    title = "Incident-response war room"
 
-    def tick(self, dt: float) -> None:
-        self.t += dt
-
-
-class LedgerRow(BaseModel):
-    agent: str
-    capability: str
-    scope: str
-    trust: str
-    remaining: int
-    ttl: int
-
-
-class Frame(BaseModel):
-    """One beat of the replay: a narrated action, the gateway's verdict, and the
-    state of live authority right after it."""
-
-    phase: str
-    narration: str
-    badge: str                  # ISSUE / ALLOW / DENY / REVOKE / EXPIRE
-    cls: str                    # info / allow / deny / warn / gold  (renderer styling)
-    message: str
-    reason: str = ""
-    ledger: list[LedgerRow] = Field(default_factory=list)
-
-
-class WarRoom:
     def __init__(self) -> None:
-        self.clock = _Clock()
-        self.gateway = Gateway(clock=self.clock)
-        self.ids = seed_war_room_agents(self.gateway)
-        self._name_of = {wid: name for name, wid in self.ids.items()}
-
-    # ── ledger view (resolve subject ids back to readable names) ────────────────
-    def _ledger(self) -> list[LedgerRow]:
-        now = self.gateway.now()
-        rows = []
-        for w in self.gateway.active_warrants():
-            rows.append(LedgerRow(
-                agent=self._name_of.get(w.subject, w.subject),
-                capability=w.capability,
-                scope=str(w.scope.get("target", "—")),
-                trust=w.trust,
-                remaining=int(w.remaining(now)),
-                ttl=int(w.ttl),
-            ))
-        return rows
-
-    def _frame(self, phase, narration, badge, cls, message, reason="") -> Frame:
-        return Frame(phase=phase, narration=narration, badge=badge, cls=cls,
-                     message=message, reason=reason, ledger=self._ledger())
+        super().__init__(war_room_adapters())
 
     # ── the replay ──────────────────────────────────────────────────────────────
     def play(self) -> Iterator[Frame]:

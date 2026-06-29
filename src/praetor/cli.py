@@ -21,8 +21,9 @@ from rich.text import Text
 
 from praetor import __version__
 from praetor.gateway import Gateway
+from praetor.scenarios import SCENARIOS
+from praetor.scenarios.base import Frame
 from praetor.scenarios.seed import seed_war_room_agents
-from praetor.scenarios.war_room import Frame, WarRoom
 
 app = typer.Typer(add_completion=False, help="Scoped, revocable authority for AI agent teams.")
 console = Console()
@@ -59,17 +60,26 @@ def _render_frame(frame: Frame) -> None:
 
 @app.command()
 def demo(
+    scenario: str = typer.Option(
+        "war-room", "--scenario", "-s",
+        help=f"Which scenario to replay. One of: {', '.join(SCENARIOS)}.",
+    ),
     interval: float = typer.Option(0.0, "--interval", "-i", help="Seconds to pause between beats."),
     loop: bool = typer.Option(False, "--loop", help="Repeat until interrupted."),
 ) -> None:
-    """Replay the incident-response war room through the real gateway."""
+    """Replay a scenario through the real gateway (every verdict is live)."""
+    cls = SCENARIOS.get(scenario)
+    if cls is None:
+        console.print(f"[red]unknown scenario '{scenario}'.[/red] "
+                      f"choose one of: {', '.join(SCENARIOS)}")
+        raise typer.Exit(code=2)
     console.print(Panel.fit(
-        Text("PRAETOR · incident-response war room", style="bold"),
+        Text(f"PRAETOR · {cls.title}", style="bold"),
         subtitle="every verdict is live, not scripted",
     ))
     try:
         while True:
-            for frame in WarRoom().play():
+            for frame in cls().play():
                 _render_frame(frame)
                 if interval:
                     time.sleep(interval)

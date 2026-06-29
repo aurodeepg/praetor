@@ -28,8 +28,9 @@ def _verdicts(frames):
 # ── registry ─────────────────────────────────────────────────────────────────
 
 
-def test_registry_exposes_all_four_scenarios():
-    assert set(SCENARIOS) == {"war-room", "least-privilege", "cross-framework", "recompose"}
+def test_registry_exposes_the_m8_scenarios():
+    # the four M8 scenarios are registered (M9 adds "phase2" on top)
+    assert {"war-room", "least-privilege", "cross-framework", "recompose"} <= set(SCENARIOS)
     assert SCENARIOS["war-room"] is WarRoom
 
 

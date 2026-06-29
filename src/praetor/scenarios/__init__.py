@@ -13,6 +13,7 @@ subclass so the CLI (and tests) can select one by name.
 from praetor.scenarios.base import Frame, LedgerRow, Scenario
 from praetor.scenarios.cross_framework import CrossFramework
 from praetor.scenarios.least_privilege import LeastPrivilege
+from praetor.scenarios.phase2 import Phase2
 from praetor.scenarios.recompose import Recompose
 from praetor.scenarios.seed import seed_war_room_agents, war_room_adapters
 from praetor.scenarios.war_room import WarRoom, play
@@ -23,6 +24,7 @@ SCENARIOS: dict[str, type[Scenario]] = {
     "least-privilege": LeastPrivilege,
     "cross-framework": CrossFramework,
     "recompose": Recompose,
+    "phase2": Phase2,
 }
 
 __all__ = [
@@ -34,6 +36,7 @@ __all__ = [
     "LeastPrivilege",
     "CrossFramework",
     "Recompose",
+    "Phase2",
     "play",
     "seed_war_room_agents",
     "war_room_adapters",

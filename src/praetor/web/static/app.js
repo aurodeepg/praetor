@@ -90,5 +90,55 @@ async function initScenarioPicker() {
   }
 }
 
+// ── orchestrator composer: POST /api/compose → fit ranking (read-only preview) ──
+function renderCompose(res) {
+  const note = $("compose-note");
+  const table = $("compose-table");
+  const tbody = table.querySelector("tbody");
+  tbody.innerHTML = "";
+  if (!res.ranked || res.ranked.length === 0) {
+    note.textContent = res.note || "no viable agent";
+    table.hidden = true;
+    return;
+  }
+  note.innerHTML = res.chosen
+    ? `would admit <strong>${res.chosen}</strong> — fit ${res.fit.score.toFixed(3)} ` +
+      `<span class="reason">(${res.fit.rationale})</span>`
+    : (res.note || "no viable agent");
+  for (const f of res.ranked) {
+    const tr = document.createElement("tr");
+    if (f.agent === res.chosen) tr.className = "chosen";
+    tr.innerHTML =
+      `<td>${f.score.toFixed(3)}</td><td class="agent">${f.agent}</td>` +
+      `<td>${f.capability}</td><td>${f.capability_match.toFixed(2)}</td>` +
+      `<td>${f.trust.toFixed(2)}</td><td>${f.budget.toFixed(0)}</td>` +
+      `<td>${f.availability.toFixed(0)}</td>`;
+    tbody.appendChild(tr);
+  }
+  table.hidden = false;
+}
+
+function initComposer() {
+  const form = $("compose-form");
+  if (!form) return;
+  form.onsubmit = async (ev) => {
+    ev.preventDefault();
+    const requirement = $("compose-input").value.trim();
+    if (!requirement) return;
+    $("compose-note").textContent = "composing…";
+    try {
+      const res = await fetch("/api/compose", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ requirement }),
+      });
+      renderCompose(await res.json());
+    } catch {
+      $("compose-note").textContent = "compose unavailable";
+    }
+  };
+}
+
 initScenarioPicker();
+initComposer();
 connect();

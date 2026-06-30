@@ -1,6 +1,6 @@
 """Scenario — Phase 2: the team reshapes *itself*.
 
-The Phase-1 `recompose` scenario hand-scripts every phase shift. This one hands the
+Where a Phase-1 replay would hand-script every team change, this one hands the
 decisions to the **orchestrator**: it scores team fit (capability × trust × budget ×
 availability), admits the best-fit agent, and recomposes on its own when an agent
 underperforms or the budget tightens. The gateway still produces every allow/deny; the

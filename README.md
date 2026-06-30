@@ -52,7 +52,6 @@ python examples/quickstart.py # the whole Phase-1 loop: issue → invoke → den
 | `war-room` _(default)_ | mixed-trust incident response; scope, escalation-blocked, revoke, TTL expiry |
 | `least-privilege` | a read+write-capable agent held to a read-only warrant — the broker decides, not the agent |
 | `cross-framework` | OpenAI + Claude + Copilot Studio agents, governed identically |
-| `recompose` | phase-driven team reshaping (hand-scripted) |
 | `phase2` | the **orchestrator** reshapes the team itself — perf-based swap + budget gate |
 
 ### Web UI

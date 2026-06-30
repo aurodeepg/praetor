@@ -12,7 +12,6 @@ from praetor.scenarios import (
     SCENARIOS,
     CrossFramework,
     LeastPrivilege,
-    Recompose,
     WarRoom,
 )
 
@@ -29,8 +28,8 @@ def _verdicts(frames):
 
 
 def test_registry_exposes_the_m8_scenarios():
-    # the four M8 scenarios are registered (M9 adds "phase2" on top)
-    assert {"war-room", "least-privilege", "cross-framework", "recompose"} <= set(SCENARIOS)
+    # the M8 scenarios are registered (M9 adds "phase2" on top)
+    assert {"war-room", "least-privilege", "cross-framework"} <= set(SCENARIOS)
     assert SCENARIOS["war-room"] is WarRoom
 
 
@@ -77,22 +76,6 @@ def test_cross_framework_governs_three_frameworks_identically():
         ("ticket.delete", "DENY"),   # outside capability
     ]
     assert {"researcher", "drafter", "ticketer"} <= set(gw.registry.agents())
-
-
-# ── #4 recompose: team membership = the set of valid warrants ────────────────
-
-
-def test_recompose_reshapes_the_team_on_phase_change():
-    gw, frames = Recompose().run()
-    assert _verdicts(frames) == [
-        ("net.isolate", "ALLOW"),       # CONTAIN: containment acts
-        ("net.isolate", "DENY"),        # dropped after phase shift
-        ("deploy.rollback", "ALLOW"),   # REMEDIATE: remediation admitted
-        ("deploy.rollback", "DENY"),    # remediation out of scope
-    ]
-    # the drop was a phase-caused revocation, not a manual one
-    causes = [e.cause for e in gw.audit.entries() if e.kind == "revoke"]
-    assert "phase" in causes
 
 
 # ── CLI selects scenarios ────────────────────────────────────────────────────

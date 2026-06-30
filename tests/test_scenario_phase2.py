@@ -1,6 +1,6 @@
 """M9: the orchestrator-driven Phase-2 scenario.
 
-Unlike the hand-scripted `recompose`, here the orchestrator *decides* the swaps. The
+Unlike a hand-scripted replay, here the orchestrator *decides* the swaps. The
 test pins that the team reshapes for real — via perf and budget triggers — and that the
 gateway cuts off whoever was dropped.
 """

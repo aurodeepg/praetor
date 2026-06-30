@@ -24,6 +24,22 @@
 
   <div id="narration" class="narration">Opening the incident-response war room…</div>
 
+  <section class="panel composer">
+    <h2>ORCHESTRATOR <span class="hint">— Phase 2: team-fit = capability × trust × budget × availability</span></h2>
+    <form id="compose-form" class="composer-form">
+      <input id="compose-input" type="text" autocomplete="off"
+             placeholder="describe a task, e.g. isolate the compromised host host-9" />
+      <button type="submit">COMPOSE</button>
+    </form>
+    <div id="compose-note" class="compose-note"></div>
+    <table id="compose-table" hidden>
+      <thead>
+        <tr><th>fit</th><th>agent</th><th>capability</th><th>cap</th><th>trust</th><th>budget</th><th>avail</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </section>
+
   <main>
     <section class="panel">
       <h2>ACTIVE WARRANTS <span class="hint">— the team's live authority</span></h2>

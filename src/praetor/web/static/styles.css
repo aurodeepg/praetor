@@ -54,6 +54,23 @@ main {
 }
 @media (max-width: 900px) { main { grid-template-columns: 1fr; } }
 
+.composer { margin: 18px 24px 0; min-height: 0; }
+.composer-form { display: flex; gap: 10px; margin-bottom: 10px; }
+.composer-form input {
+  flex: 1; padding: 8px 12px; border-radius: 8px;
+  border: 1px solid var(--line); background: #0e121b; color: var(--ink);
+  font: inherit;
+}
+.composer-form button {
+  padding: 8px 16px; border-radius: 8px; border: 1px solid var(--line);
+  background: #10231b; color: var(--gold); letter-spacing: 1px; cursor: pointer;
+}
+.composer-form button:hover { background: #16301f; }
+.compose-note { color: var(--dim); font-size: 13px; margin-bottom: 8px; }
+.compose-note .reason { color: var(--dim); font-style: italic; }
+#compose-table tr.chosen { background: #10231b; }
+#compose-table tr.chosen .agent { color: var(--gold); }
+
 .panel {
   background: var(--panel); border: 1px solid var(--line);
   border-radius: 12px; padding: 16px; min-height: 60vh;

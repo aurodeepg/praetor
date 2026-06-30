@@ -8,7 +8,7 @@ agents, and uses that authority layer to compose and reshape teams of agents.**
 
 Praetor sits between a requester and a fluid team of agents. It issues each agent a
 **warrant**: a verifiable, least-privilege, time-boxed grant for exactly the capability a
-task needs right now — and revokes it the instant you need to. Team membership *is* the set
+task needs right now — and revokes it the instant you need to. Team membership _is_ the set
 of valid warrants: admitting an agent means issuing one, dropping it means revoking one.
 
 It is designed to govern a **mix of agents you don't fully control** — ones you build
@@ -26,6 +26,43 @@ enforcement point.
   crypto and policy (not inference); intelligence is layered on top where non-determinism is
   acceptable.
 - **Cheap to run** — the default configuration costs ~$0; paid LLM backends are opt-in.
+
+## The two phases
+
+Praetor is built in two layers. **Phase 2 sits on top of Phase 1 and never inside it** —
+composition reasoning is layered above enforcement, so security stays deterministic while
+intelligence is added where non-determinism is acceptable.
+
+### Phase 1 — Identity & delegated-authority core _(deterministic)_
+
+The trustworthy foundation: crypto and policy, **no inference**. Every agent gets a
+verifiable identity; the gateway issues scoped, time-boxed, revocable **warrants**, enforces
+every call against the live ledger, and binds every action to an identity + its warrant in an
+audit trail. Revocation is "deny the next call." This layer is deterministic by design — you
+want security reproducible.
+
+- Verifiable agent identity (RS256-signed warrant tokens)
+- Warrant model + scope matching · issue · **enforce** · revoke · audit
+- Capability registry + the **deterministic** ($0) capability-matcher
+- Bring-your-own-agent **adapters** — in-process, HTTP, and MCP (any Model Context Protocol server)
+- CLI (`demo`, `match`) + REST/WebSocket API + Web UI
+
+### Phase 2 — Requirement-driven team evolution _(intelligent)_
+
+The gateway stops being told who's on the team and starts **deciding**. An orchestrator scores
+**team fit = capability × trust × budget × availability** and recomposes by issuing/revoking
+warrants as performance, budget, and requirements shift — admitting the best-fit agent, benching
+an underperformer, promoting a cheaper specialist when the budget tightens. Membership _is_ the
+set of valid warrants. This is where the non-deterministic, "intelligent gateway" reasoning lives.
+
+- The **orchestrator** — deterministic fit-scorer + recomposition triggers (perf swap, budget
+  gate, reputation-weighted trust); `praetor compose` and the Web-UI composer
+- The **semantic** capability-matcher (opt-in) — embedding-based ranking + generated scope
+  proposals, provider-neutral (local Ollama / any OpenAI-compatible), degrades to deterministic
+- The `phase2` scenario — watch the team reshape itself, every verdict still enforced by Phase 1
+
+Everything in Phase 2 reuses the Phase-1 substrate: a recomposition is just issuing and revoking
+warrants through the same enforcement point.
 
 ## Quickstart
 

@@ -141,7 +141,7 @@ def create_app() -> FastAPI:
         await ws.accept()
         interval = max(0.05, int(ws.query_params.get("interval_ms", "900")) / 1000)
         loop = ws.query_params.get("loop", "1") != "0"
-        cls = SCENARIOS.get(ws.query_params.get("scenario", "war-room"))
+        cls = SCENARIOS.get(ws.query_params.get("scenario", "phase1-war-room"))
         if cls is None:
             await ws.send_json({"error": "unknown scenario"})
             await ws.close()

@@ -1,10 +1,9 @@
-"""Scenario — Phase 2: the team reshapes *itself*.
+"""Phase 2 · war room — the incident-response team reshapes *itself*.
 
-Where a Phase-1 replay would hand-script every team change, this one hands the
-decisions to the **orchestrator**: it scores team fit (capability × trust × budget ×
-availability), admits the best-fit agent, and recomposes on its own when an agent
-underperforms or the budget tightens. The gateway still produces every allow/deny; the
-orchestrator decides *who is on the team*.
+The orchestrator-driven counterpart to `phase1-war-room`. The orchestrator scores team
+fit (capability × trust × budget × availability), admits the best-fit agent, and
+recomposes on its own — the gateway still produces every allow/deny; the orchestrator
+decides *who is on the team*.
 
 Two beats straight from the public vision:
   • "an agent underperforms and gets swapped"
@@ -17,13 +16,14 @@ from collections.abc import Iterator
 
 from praetor.adapters.mock import MockAdapter
 from praetor.models import Capability, ToolCall
-from praetor.orchestrator import AgentProfile, Composition, Orchestrator
-from praetor.scenarios.base import Frame, Scenario
+from praetor.orchestrator import AgentProfile, Orchestrator
+from praetor.scenarios.base import Frame
+from praetor.scenarios.phase2_base import Phase2Scenario
 
-__all__ = ["Phase2", "phase2_adapters", "play"]
+__all__ = ["Phase2WarRoom", "phase2_war_room_adapters", "play"]
 
 
-def phase2_adapters() -> list[MockAdapter]:
+def phase2_war_room_adapters() -> list[MockAdapter]:
     isolate = Capability(name="net.isolate", description="Quarantine a host", targets="host:*")
     readlogs = Capability(name="logs.read", description="Read system and application logs",
                           targets="logs:*")
@@ -39,11 +39,11 @@ def phase2_adapters() -> list[MockAdapter]:
     ]
 
 
-class Phase2(Scenario):
-    title = "Phase 2 — the team reshapes itself (orchestrator-driven)"
+class Phase2WarRoom(Phase2Scenario):
+    title = "Phase 2 · war room — the team reshapes itself (orchestrator-driven)"
 
     def __init__(self) -> None:
-        super().__init__(phase2_adapters())
+        super().__init__(phase2_war_room_adapters())
         self.orch = Orchestrator(self.gateway, budget=10.0)
         for p in (
             AgentProfile(agent="containment-a", trust="internal · high-priv", cost=1.0),
@@ -54,15 +54,6 @@ class Phase2(Scenario):
                          trust_weight=0.8, cost=1.0),
         ):
             self.orch.set_profile(p)
-
-    def _admit_frame(self, phase: str, comp: Composition, cls: str = "gold") -> Frame:
-        f = comp.fit
-        return self._frame(
-            phase,
-            f"Orchestrator scores team fit and admits {comp.chosen} "
-            f"(fit {f.score:.3f} = cap {f.capability_match:.2f} × trust {f.trust:.2f} "
-            f"× budget {f.budget:.0f} × avail {f.availability:.0f}).",
-            "ISSUE", cls, f"warrant issued · {comp.chosen} · {f.capability}", f.rationale)
 
     def play(self) -> Iterator[Frame]:
         gw = self.gateway
@@ -117,4 +108,4 @@ class Phase2(Scenario):
 
 
 def play() -> tuple:
-    return Phase2().run()
+    return Phase2WarRoom().run()

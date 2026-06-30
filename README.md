@@ -59,7 +59,7 @@ set of valid warrants. This is where the non-deterministic, "intelligent gateway
   gate, reputation-weighted trust); `praetor compose` and the Web-UI composer
 - The **semantic** capability-matcher (opt-in) — embedding-based ranking + generated scope
   proposals, provider-neutral (local Ollama / any OpenAI-compatible), degrades to deterministic
-- The `phase2` scenario — watch the team reshape itself, every verdict still enforced by Phase 1
+- The `phase2-*` scenarios — watch the team reshape itself, every verdict still enforced by Phase 1
 
 Everything in Phase 2 reuses the Phase-1 substrate: a recomposition is just issuing and revoking
 warrants through the same enforcement point.
@@ -84,12 +84,17 @@ python examples/quickstart.py # the whole Phase-1 loop: issue → invoke → den
 
 `praetor demo --scenario <key>` (or pick one in the Web UI):
 
+Each scenario comes in two variants — **Phase 1** (warrants issued on explicit beats) and
+**Phase 2** (the orchestrator decides composition and recomposes itself):
+
 | key | what it shows |
 | --- | --- |
-| `war-room` _(default)_ | mixed-trust incident response; scope, escalation-blocked, revoke, TTL expiry |
-| `least-privilege` | a read+write-capable agent held to a read-only warrant — the broker decides, not the agent |
-| `cross-framework` | OpenAI + Claude + Copilot Studio agents, governed identically |
-| `phase2` | the **orchestrator** reshapes the team itself — perf-based swap + budget gate |
+| `phase1-war-room` _(default)_ | mixed-trust incident response; scope, escalation-blocked, revoke, TTL expiry |
+| `phase1-least-privilege` | a read+write-capable agent held to a read-only warrant — the broker decides, not the agent |
+| `phase1-cross-framework` | OpenAI + Claude + Copilot Studio agents, governed identically |
+| `phase2-war-room` | the **orchestrator** reshapes the IR team itself — perf-based swap + budget gate |
+| `phase2-least-privilege` | the orchestrator _picks_ the data agent by fit; the read-only warrant still contains the write |
+| `phase2-cross-framework` | the orchestrator picks the best-fit agent per subtask and swaps frameworks on underperformance |
 
 ### Web UI
 

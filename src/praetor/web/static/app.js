@@ -51,7 +51,7 @@ function apply(frame) {
 }
 
 let ws = null;
-let scenario = "war-room";
+let scenario = "phase1-war-room";
 
 function connect() {
   const proto = location.protocol === "https:" ? "wss" : "ws";

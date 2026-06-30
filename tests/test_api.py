@@ -93,20 +93,20 @@ def test_websocket_streams_war_room_frames(client):
     assert "ISSUE" in badges and "ALLOW" in badges and "DENY" in badges
 
 
-def test_scenarios_endpoint_lists_phase2(client):
+def test_scenarios_endpoint_lists_both_phases(client):
     items = client.get("/api/scenarios").json()
     keys = {s["key"] for s in items}
-    assert {"war-room", "phase2"} <= keys
+    assert {"phase1-war-room", "phase2-war-room"} <= keys
     assert all("title" in s for s in items)
 
 
 def test_websocket_can_stream_a_chosen_scenario(client):
-    # the Phase-2 orchestrator-driven scenario, selected by query param
+    # the Phase-2 orchestrator-driven war room, selected by query param
     with client.websocket_connect(
-        "/api/ws/demo?scenario=phase2&interval_ms=0&loop=0"
+        "/api/ws/demo?scenario=phase2-war-room&interval_ms=0&loop=0"
     ) as ws:
         badges, messages = set(), []
-        for _ in range(11):  # phase2 has 11 frames
+        for _ in range(11):  # phase2-war-room has 11 frames
             f = ws.receive_json()
             badges.add(f["badge"])
             messages.append(f["message"])

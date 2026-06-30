@@ -63,7 +63,7 @@ def _render_frame(frame: Frame) -> None:
 @app.command()
 def demo(
     scenario: str = typer.Option(
-        "war-room", "--scenario", "-s",
+        "phase1-war-room", "--scenario", "-s",
         help=f"Which scenario to replay. One of: {', '.join(SCENARIOS)}.",
     ),
     interval: float = typer.Option(0.0, "--interval", "-i", help="Seconds to pause between beats."),

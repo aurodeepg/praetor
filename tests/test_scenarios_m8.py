@@ -28,9 +28,9 @@ def _verdicts(frames):
 
 
 def test_registry_exposes_the_m8_scenarios():
-    # the M8 scenarios are registered (M9 adds "phase2" on top)
-    assert {"war-room", "least-privilege", "cross-framework"} <= set(SCENARIOS)
-    assert SCENARIOS["war-room"] is WarRoom
+    # the Phase-1 scenarios are registered (Phase-2 variants added on top)
+    assert {"phase1-war-room", "phase1-least-privilege", "phase1-cross-framework"} <= set(SCENARIOS)
+    assert SCENARIOS["phase1-war-room"] is WarRoom
 
 
 def test_every_scenario_runs_and_produces_live_verdicts():
@@ -82,7 +82,7 @@ def test_cross_framework_governs_three_frameworks_identically():
 
 
 def test_cli_demo_runs_a_selected_scenario():
-    result = runner.invoke(app, ["demo", "--scenario", "least-privilege"])
+    result = runner.invoke(app, ["demo", "--scenario", "phase1-least-privilege"])
     assert result.exit_code == 0
     assert "ALLOW" in result.stdout and "DENY" in result.stdout
     assert "contained" in result.stdout.lower()

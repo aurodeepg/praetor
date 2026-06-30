@@ -23,6 +23,7 @@ from pydantic import BaseModel, Field
 from praetor import __version__
 from praetor.gateway import Gateway
 from praetor.models import ToolCall
+from praetor.orchestrator import Orchestrator
 from praetor.scenarios import SCENARIOS
 from praetor.scenarios.seed import seed_war_room_agents
 
@@ -56,6 +57,12 @@ class EnforceBody(BaseModel):
 class MatchBody(BaseModel):
     requirement: str
     on_behalf_of: str = ""
+
+
+class ComposeBody(BaseModel):
+    requirement: str
+    on_behalf_of: str = ""
+    budget: float | None = None
 
 
 def create_app() -> FastAPI:
@@ -104,6 +111,15 @@ def create_app() -> FastAPI:
     @app.post("/api/match")
     def match(body: MatchBody) -> dict:
         return gw.match(body.requirement, on_behalf_of=body.on_behalf_of).model_dump()
+
+    @app.post("/api/compose")
+    def compose(body: ComposeBody) -> dict:
+        """Phase-2 team-fit ranking + who *would* be admitted (read-only preview — issues
+        nothing, so it's safe over the shared gateway). Fit = capability × trust × budget ×
+        availability, with trust reputation-weighted."""
+        orch = Orchestrator(gw, budget=body.budget)
+        orch.sync_profiles_from_gateway()
+        return orch.preview(body.requirement, on_behalf_of=body.on_behalf_of).model_dump()
 
     @app.get("/api/audit")
     def audit(limit: int = 50) -> list[dict]:

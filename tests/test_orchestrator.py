@@ -161,3 +161,46 @@ def test_snapshot_exposes_profiles_and_the_last_ranking():
     assert set(snap["profiles"]) >= {"containment-a", "containment-b"}
     ranking = snap["rankings"]["incident://1"]
     assert ranking and {"agent", "score", "capability_match", "trust"} <= set(ranking[0])
+
+
+# ── reputation: trust = declared × earned (M9 polish) ────────────────────────
+
+
+def test_reputation_biases_composition_toward_the_better_performer():
+    gw = _gw_with(("agent-x", [ISOLATE]), ("agent-y", [ISOLATE]))
+    orch = Orchestrator(gw)
+    # identical except reputation: x has a weaker track record (still available)
+    orch.set_profile(AgentProfile(agent="agent-x", trust="internal", cost=1.0, performance=0.7))
+    orch.set_profile(AgentProfile(agent="agent-y", trust="internal", cost=1.0, performance=1.0))
+    comp = orch.compose("isolate host-9", on_behalf_of="incident://1")
+    assert comp.chosen == "agent-y"                  # higher earned trust wins
+    assert comp.fit.base_trust == 1.0 and comp.fit.reputation == 1.0
+    assert comp.fit.trust == 1.0                     # declared 1.0 × reputation 1.0
+
+
+def test_rebalance_swaps_to_a_better_reputation_agent():
+    gw = _gw_with(("agent-x", [ISOLATE]), ("agent-y", [ISOLATE]))
+    orch = Orchestrator(gw)
+    orch.set_profile(AgentProfile(agent="agent-x", trust="internal", cost=1.0))
+    orch.set_profile(AgentProfile(agent="agent-y", trust="internal", cost=2.0))
+    first = orch.compose("isolate host-9", on_behalf_of="incident://1")
+    assert first.chosen == "agent-x"                 # cheaper tie-break initially
+
+    orch.profile("agent-x").performance = 0.5        # x's reputation erodes over time
+    swap = orch.rebalance("incident://1")
+    assert swap is not None and swap.chosen == "agent-y"
+    assert "reputation" in [e.cause for e in gw.audit.entries() if e.kind == "revoke"]
+    # the incumbent is now best again → no further churn
+    assert orch.rebalance("incident://1") is None
+
+
+# ── preview: read-only ranking, issues nothing ──────────────────────────────
+
+
+def test_preview_ranks_without_issuing_a_warrant():
+    gw = _gw_with(("containment-a", [ISOLATE]))
+    orch = Orchestrator(gw)
+    orch.sync_profiles_from_gateway()
+    comp = orch.preview("isolate host-9", on_behalf_of="incident://1")
+    assert comp.chosen == "containment-a" and comp.warrant_id is None
+    assert gw.active_warrants() == []                # nothing issued

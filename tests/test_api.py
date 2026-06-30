@@ -63,6 +63,17 @@ def test_match_endpoint_proposes_a_scope(client):
     assert res["proposal"]["scope"] == {"target": "host-9"}
 
 
+def test_compose_endpoint_ranks_team_fit_without_issuing(client):
+    res = client.post("/api/compose", json={
+        "requirement": "isolate the compromised host host-9"}).json()
+    assert res["chosen"] == "containment"
+    assert res["fit"]["capability"] == "net.isolate"
+    assert {"capability_match", "trust", "budget", "availability"} <= set(res["fit"])
+    # read-only: the preview issued nothing
+    assert res["warrant_id"] is None
+    assert client.get("/api/warrants").json() == []
+
+
 def test_audit_and_snapshot(client):
     client.post("/api/warrants", json={"subject": "forensics", "capability": "logs.read"})
     assert any(e["kind"] == "issue" for e in client.get("/api/audit").json())

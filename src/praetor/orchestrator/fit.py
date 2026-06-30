@@ -23,10 +23,12 @@ class FitScore(BaseModel):
     score: float
     # the four factors, each in [0,1]
     capability_match: float
-    trust: float
+    trust: float            # earned trust = declared weight × reputation
     budget: float
     availability: float
     # context for explainability / tie-breaking
+    base_trust: float = 1.0  # the declared trust weight, before reputation
+    reputation: float = 1.0  # rolling performance signal that biases trust
     cost: float = 0.0
     affordable: bool = True
     available: bool = True
@@ -48,14 +50,18 @@ def score_fit(
     profile: AgentProfile,
     budget: float | None,
 ) -> FitScore:
-    trust = profile.weight()
+    base_trust = profile.weight()
+    reputation = profile.performance
+    trust = round(base_trust * reputation, 6)  # earned trust: declared × reputation
     avail = 1.0 if profile.available else 0.0
     gate = budget_gate(profile.cost, budget)
     score = round(capability_match * trust * gate * avail, 6)
     affordable = gate > 0
+    trust_bit = (f"trust {trust:.2f}" if reputation >= 1.0
+                 else f"trust {trust:.2f} (base {base_trust:.2f} × rep {reputation:.2f})")
     bits = [
         f"capability {capability_match:.3f}",
-        f"trust {trust:.2f}",
+        trust_bit,
         ("affordable" if affordable else f"priced out (cost {profile.cost} > budget {budget})"),
         ("available" if profile.available else "unavailable (benched)"),
     ]
@@ -67,6 +73,8 @@ def score_fit(
         trust=trust,
         budget=gate,
         availability=avail,
+        base_trust=base_trust,
+        reputation=reputation,
         cost=profile.cost,
         affordable=affordable,
         available=profile.available,

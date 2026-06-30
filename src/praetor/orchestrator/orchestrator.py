@@ -134,6 +134,22 @@ class Orchestrator:
             note=f"admitted {top.agent} (fit {top.score:.3f})",
         )
 
+    def preview(
+        self, requirement: str, *, on_behalf_of: str = "", exclude: set[str] | None = None
+    ) -> Composition:
+        """Rank fit and report who *would* be admitted — **without issuing anything**. The
+        read-only counterpart to :meth:`compose` (mirrors the matcher's propose-only mode),
+        suitable for a REST endpoint over a shared gateway."""
+        ranked = self.rank(requirement, exclude=exclude)
+        viable = [f for f in ranked if f.score > 0]
+        if not viable:
+            return Composition(requirement=requirement, on_behalf_of=on_behalf_of,
+                               ranked=ranked, note="no viable agent")
+        top = viable[0]
+        return Composition(requirement=requirement, on_behalf_of=on_behalf_of,
+                           chosen=top.agent, fit=top, ranked=ranked,
+                           note=f"would admit {top.agent} (fit {top.score:.3f})")
+
     # ── triggers that reshape the team ───────────────────────────────────────────
     def report_performance(self, agent: str, ok: bool) -> list[Composition]:
         """Feed an outcome back. A success nudges performance up; a failure drops it, and
@@ -167,6 +183,26 @@ class Orchestrator:
                     self._revoke_agent_task(a, obo, cause="phase", reason="budget gate: priced out")
                 out.append(self.compose(req, on_behalf_of=obo, exclude=set(priced_out)))
         return out
+
+    def rebalance(self, on_behalf_of: str) -> Composition | None:
+        """Re-rank a live task against current reputations and, if a *different* agent now
+        fits best, swap to it (revoke incumbent `cause="reputation"`, admit the new best).
+        This is the learned-routing trigger: as outcomes accrue, trust = declared × earned
+        reputation shifts, so composition drifts toward agents that perform well. Returns
+        the new Composition if it swapped, else None."""
+        req = self._tasks.get(on_behalf_of)
+        if not req:
+            return None
+        viable = [f for f in self.rank(req) if f.score > 0]
+        if not viable:
+            return None
+        holders = set(self._task_holders(on_behalf_of))
+        if viable[0].agent in holders:
+            return None  # the incumbent is still the best fit
+        for a in holders:
+            self._revoke_agent_task(a, on_behalf_of, cause="reputation",
+                                    reason="rebalance: a better-reputation agent is available")
+        return self.compose(req, on_behalf_of=on_behalf_of)
 
     def release(self, on_behalf_of: str, *, cause: str = "phase", reason: str = "") -> None:
         """Drop the whole team for a finished task/phase — revoke all its warrants."""

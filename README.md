@@ -62,6 +62,40 @@ pip install -e ".[serve]"     # FastAPI + uvicorn
 praetor serve                 # → http://localhost:8088  (live ledger + decision feed; pick a scenario)
 ```
 
+### Semantic matcher (optional, hybrid — local or any API)
+
+By default the capability-matcher is **deterministic** ($0, offline, lexical). You can
+opt into a **semantic** backend that ranks capabilities by embedding similarity and
+(optionally) drafts the scope proposal with a small generator — it **degrades back to
+deterministic** automatically if a model isn't reachable, so nothing ever hard-fails.
+
+It's provider-neutral and split into two independent axes you can mix freely:
+
+- **Embedder** (ranking) and **Generator** (scope proposal), each either **`ollama`**
+  (local/offline) or **`openai`** (any OpenAI-compatible endpoint — OpenAI, Gemini's
+  compatible API, local servers — via `OPENAI_BASE_URL` + `OPENAI_API_KEY`).
+
+Selection is env-driven; only the HTTP client is needed locally (`pip install -e ".[semantic]"`):
+
+```bash
+ollama pull qwen3-embedding:0.6b     # embedder
+ollama pull qwen3:0.6b               # generator
+export PRAETOR_EMBEDDER="ollama:qwen3-embedding:0.6b"
+export PRAETOR_GENERATOR="ollama:qwen3:0.6b"     # optional; omit to keep deterministic proposals
+praetor match "isolate the compromised host host-9"   # the printed `backend:` shows which is active
+```
+
+**Reference local demo — asymmetric quantization** (Apple Silicon, ~1 GB total):
+
+| Role | Model | Quant | ~Size | Why |
+| --- | --- | --- | --- | --- |
+| Embedder | `qwen3-embedding:0.6b` | **Q8** | ~639 MB | protect ranking quality; cheap anyway |
+| Generator | `qwen3:0.6b` | **Q4** | ~400 MB | tolerable for extraction + constrained decoding |
+
+The embedder drives the headline "semantic" win, so keep it at Q8; the generator only
+does narrow scope extraction, so Q4 (with JSON-constrained output) is fine. Mix and match:
+a local embedder with a paid generator, or vice versa — same contract, no provider lock-in.
+
 ### Run the tests
 
 ```bash
@@ -79,6 +113,7 @@ The core install is deliberately dependency-light; heavier pieces are opt-in and
 | `serve` | fastapi, uvicorn | the HTTP API + Web UI (`praetor serve`) |
 | `http` | httpx | governing a remote agent over HTTP (`HTTPAdapter`) |
 | `mcp` | mcp | governing any Model Context Protocol server (`MCPAdapter`) |
+| `semantic` | httpx | semantic matcher backends (Ollama / OpenAI-compatible) |
 
 Install several at once, e.g. `pip install -e ".[dev,serve]"`.
 

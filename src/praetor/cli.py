@@ -139,7 +139,8 @@ def compose(
     comp = orch.compose(requirement, on_behalf_of=on_behalf_of)
 
     console.print(f"[bold]requirement[/bold]: {requirement}")
-    console.print(f"[dim]budget: {budget if budget is not None else '—'}[/dim]\n")
+    console.print(f"[dim]budget: {budget if budget is not None else '—'} · "
+                  f"matcher: {gw.matcher.name}[/dim]\n")
 
     table = Table("fit", "agent", "capability", "cap", "trust", "budget", "avail", box=None)
     for f in comp.ranked[:6]:

@@ -21,7 +21,7 @@ from praetor.audit import AuditLog
 from praetor.enforcement import decide
 from praetor.identity import LocalIdentityProvider
 from praetor.identity.base import IdentityProvider
-from praetor.matcher import CapabilityMatcher, DeterministicMatcher, MatchResult
+from praetor.matcher import CapabilityMatcher, MatchResult, make_matcher
 from praetor.models import (
     AgentIdentity,
     AuditEntry,
@@ -54,7 +54,9 @@ class Gateway:
         self.warrant_ttl_default = warrant_ttl_default
 
         self.identity = identity or LocalIdentityProvider()
-        self.matcher = matcher or DeterministicMatcher()
+        # Default matcher is selected from env config (PRAETOR_EMBEDDER/…); with no config
+        # this returns the $0 deterministic matcher. Always degrades gracefully.
+        self.matcher = matcher or make_matcher()
         self.registry = CapabilityRegistry()
         self.ledger = WarrantLedger()
         self.issuer = WarrantIssuer(self.identity)

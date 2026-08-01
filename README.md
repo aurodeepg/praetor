@@ -44,7 +44,9 @@ want security reproducible.
 - Verifiable agent identity (RS256-signed warrant tokens)
 - Warrant model + scope matching · issue · **enforce** · revoke · audit
 - Capability registry + the **deterministic** ($0) capability-matcher
-- Bring-your-own-agent **adapters** — in-process, HTTP, and MCP (any Model Context Protocol server)
+- Bring-your-own-agent **adapters** — in-process, HTTP, MCP (any Model Context Protocol
+  server), and the hosted-agent family: OpenAI/ChatGPT (plus any OpenAI-compatible
+  endpoint), Gemini, Anthropic/Claude, and Microsoft Copilot Studio
 - CLI (`demo`, `match`) + REST/WebSocket API + Web UI
 
 ### Phase 2 — Requirement-driven team evolution _(intelligent)_
@@ -154,9 +156,32 @@ The core install is deliberately dependency-light; heavier pieces are opt-in and
 | `serve` | fastapi, uvicorn | the HTTP API + Web UI (`praetor serve`) |
 | `http` | httpx | governing a remote agent over HTTP (`HTTPAdapter`) |
 | `mcp` | mcp | governing any Model Context Protocol server (`MCPAdapter`) |
+| `llm` | httpx | governing hosted agents — OpenAI, Gemini, Anthropic, Copilot Studio |
 | `semantic` | httpx | semantic matcher backends (Ollama / OpenAI-compatible) |
 
 Install several at once, e.g. `pip install -e ".[dev,serve]"`.
+
+### Adapters
+
+One contract — `manifest()` + `invoke()` — over four different wire shapes. No vendor
+SDKs: every provider is spoken as plain REST, so none is privileged and the core install
+stays light.
+
+| Adapter | Governs | Wire shape |
+| --- | --- | --- |
+| `MockAdapter` | an in-process agent | — (deterministic reference impl) |
+| `HTTPAdapter` | any agent behind `GET /manifest` + `POST /invoke` | JSON over HTTP |
+| `MCPAdapter` | any Model Context Protocol server | `list_tools` / `call_tool` (stdio or streamable-HTTP) |
+| `OpenAIAdapter` | ChatGPT-family **and any OpenAI-compatible endpoint** (Azure, vLLM, LM Studio, OpenRouter, Ollama) | `/v1/chat/completions` |
+| `GeminiAdapter` | Google Gemini | native `models/{model}:generateContent` |
+| `AnthropicAdapter` | Claude-family | Anthropic Messages API |
+| `CopilotStudioAdapter` | Microsoft Copilot Studio agents | Direct Line 3.0 — a *conversation* (start → post → poll) |
+
+Adapters never make authorization decisions. The gateway enforces the warrant **before**
+`invoke`, so a denied call never reaches the agent — proven per adapter by tests that
+assert zero outbound requests on a denied or revoked call.
+
+Looking for real agents to point these at? See [docs/TEST_AGENTS.md](docs/TEST_AGENTS.md).
 
 ## License
 

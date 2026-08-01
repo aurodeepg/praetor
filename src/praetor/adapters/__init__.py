@@ -11,6 +11,7 @@ lazily (`httpx` for HTTP and the LLM family, `mcp` for MCP), so importing this p
 never pulls in the `http`/`mcp`/`llm` extras.
 """
 
+from praetor.adapters.anthropic import AnthropicAdapter
 from praetor.adapters.base import AgentAdapter
 from praetor.adapters.gemini import GeminiAdapter
 from praetor.adapters.http import HTTPAdapter
@@ -21,6 +22,7 @@ from praetor.adapters.openai import OpenAIAdapter
 
 __all__ = [
     "AgentAdapter",
+    "AnthropicAdapter",
     "GeminiAdapter",
     "HTTPAdapter",
     "LLMAgentAdapter",

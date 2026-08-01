@@ -48,6 +48,11 @@ http = [
 mcp = [
   "mcp>=1.0",
 ]
+# Govern hosted-LLM agents (ChatGPT / Gemini / Claude / Copilot Studio). Provider APIs
+# are spoken as plain REST — no vendor SDKs — so only an HTTP client is needed.
+llm = [
+  "httpx>=0.27",
+]
 # Semantic capability-matcher backends (embeddings + generation) over HTTP. The actual
 # models run in Ollama or any OpenAI-compatible endpoint — only the HTTP client is needed.
 semantic = [

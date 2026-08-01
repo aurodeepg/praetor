@@ -2,8 +2,13 @@
 
 M5 ships the contract (`AgentAdapter`) and an in-process `MockAdapter`. M8 adds the
 real third-party adapters: `HTTPAdapter` (a remote agent over JSON), `MCPAdapter` (any
-Model Context Protocol server), and the hosted-LLM family built on `LLMAgentAdapter`
-(`OpenAIAdapter` and, in following increments, Gemini / Anthropic / Copilot Studio).
+Model Context Protocol server), and the hosted-agent family built on `LLMAgentAdapter`
+— `OpenAIAdapter` (and any OpenAI-compatible endpoint), `GeminiAdapter`,
+`AnthropicAdapter`, and `CopilotStudioAdapter`.
+
+Four wire shapes, one contract: chat-completions, Gemini's `generateContent`, the
+Anthropic Messages API, and Direct Line's *conversation* (start → post → poll). Every
+provider is spoken as plain REST — no vendor SDKs, none privileged.
 
 Every one of them is a dumb conduit: the gateway enforces the warrant *before* `invoke`,
 so no adapter ever makes an authorization decision. Optional dependencies are imported
@@ -13,6 +18,7 @@ never pulls in the `http`/`mcp`/`llm` extras.
 
 from praetor.adapters.anthropic import AnthropicAdapter
 from praetor.adapters.base import AgentAdapter
+from praetor.adapters.copilot_studio import CopilotStudioAdapter
 from praetor.adapters.gemini import GeminiAdapter
 from praetor.adapters.http import HTTPAdapter
 from praetor.adapters.llm import LLMAgentAdapter
@@ -23,6 +29,7 @@ from praetor.adapters.openai import OpenAIAdapter
 __all__ = [
     "AgentAdapter",
     "AnthropicAdapter",
+    "CopilotStudioAdapter",
     "GeminiAdapter",
     "HTTPAdapter",
     "LLMAgentAdapter",

@@ -12,6 +12,7 @@ never pulls in the `http`/`mcp`/`llm` extras.
 """
 
 from praetor.adapters.base import AgentAdapter
+from praetor.adapters.gemini import GeminiAdapter
 from praetor.adapters.http import HTTPAdapter
 from praetor.adapters.llm import LLMAgentAdapter
 from praetor.adapters.mcp import MCPAdapter
@@ -20,6 +21,7 @@ from praetor.adapters.openai import OpenAIAdapter
 
 __all__ = [
     "AgentAdapter",
+    "GeminiAdapter",
     "HTTPAdapter",
     "LLMAgentAdapter",
     "MCPAdapter",
